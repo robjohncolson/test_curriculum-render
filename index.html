@@ -2586,7 +2586,7 @@ function renderLessonSelector(unitInfo) {
                 // Track radio button clicks (MC questions)
                 const radios = document.querySelectorAll(`input[name="choice-${questionId}"]`);
                 radios.forEach(radio => {
-                    const listener = () => updateUserActivity('answering', questionId);
+                    const listener = () => { if (typeof updateUserActivity === 'function') { updateUserActivity('answering', questionId); } };
                     radio.addEventListener('change', listener);
                     // TASK 4.1: Track for cleanup
                     activityListeners.push({ element: radio, type: 'change', listener });
@@ -2599,7 +2599,7 @@ function renderLessonSelector(unitInfo) {
                     const focusListener = () => {
                         if (focusTimeout) clearTimeout(focusTimeout);
                         focusTimeout = setTimeout(() => {
-                            updateUserActivity('answering', questionId);
+                            if (typeof updateUserActivity === 'function') { updateUserActivity('answering', questionId); }
                         }, 1000);
                     };
                     const blurListener = () => {
@@ -2621,7 +2621,7 @@ function renderLessonSelector(unitInfo) {
                     const focusListener = () => {
                         if (focusTimeout) clearTimeout(focusTimeout);
                         focusTimeout = setTimeout(() => {
-                            updateUserActivity('answering', questionId);
+                            if (typeof updateUserActivity === 'function') { updateUserActivity('answering', questionId); }
                         }, 1000);
                     };
                     const blurListener = () => {
@@ -3676,8 +3676,10 @@ function renderAttachments(attachments, questionId) {
                 console.log(`🐷 Activity: ${currentUsername} submitted answer to ${questionId}`);
             }
 
-            // TASK 3.3: Track activity state for real-time sync
-            updateUserActivity('submitted', questionId);
+            // TASK 3.3: Track activity state for real-time sync (guarded)
+            if (typeof updateUserActivity === 'function') {
+                updateUserActivity('submitted', questionId);
+            }
 
             // Update UI
             const submitBtn = document.getElementById(`submit-${questionId}`);
