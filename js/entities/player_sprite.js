@@ -13,12 +13,11 @@ class PlayerSprite {
     this.animationSpeed = 0.1;
     this.walkCycleLength = 4;
     this.keys = {};
-    // Physics properties
-    this.gravity = 1800; // px/s^2
-    this.jumpForce = 700; // px/s
     this.maxSpeed = 220;
+    this.gravity = 1800;
+    this.jumpForce = 700;
     this.isOnGround = false;
-    this.state = 'idle'; // 'idle' | 'walking' | 'jumping'
+    this.state = 'idle';
     this._handleKeyDown = this._handleKeyDown.bind(this);
     this._handleKeyUp = this._handleKeyUp.bind(this);
     this.setupKeyboardControls();

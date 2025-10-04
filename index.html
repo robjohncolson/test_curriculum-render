@@ -147,22 +147,6 @@
         </div>
     </div>
 
-    <!-- TASK 5.2: Sprite Settings Modal - DISABLED -->
-    <!-- <div id="spriteSettingsModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeSpriteSettingsModal()">&times;</span>
-            <h2>🚧 Sprite System Under Construction</h2>
-
-            <div class="sprite-settings-container" style="text-align: center; padding: 40px 20px;">
-                <p style="font-size: 18px; margin-bottom: 20px;">
-                    The multiplayer sprites are being rebuilt for better performance.
-                </p>
-                <p style="font-size: 16px; color: #666;">
-                    Check back soon!
-                </p>
-            </div>
-        </div>
-    </div> -->
 
 <script src="data/curriculum.js"></script>
     <script src="data/units.js"></script>
@@ -4893,6 +4877,48 @@ if (chartInstances[`dotplot-${questionId}`]) {
             }
         }
 
+        // Helper function to check if an answer is correct
+        function checkIfAnswerCorrect(questionId, peerAnswerValue) {
+            try {
+                if (typeof getCorrectAnswer === 'function') {
+                    const correct = getCorrectAnswer(questionId);
+                    if (correct == null || peerAnswerValue == null) return false;
+                    return String(peerAnswerValue).trim().toLowerCase() === String(correct).trim().toLowerCase();
+                }
+                return false;
+            } catch {
+                return false;
+            }
+        }
+
+        // --- Main Event Listener for Real-Time Updates ---
+        window.addEventListener('peer:answer', (event) => {
+            const detail = event?.detail || {};
+            // Note: mergePeerAnswer would be called here if it existed
+            // const stateWasUpdated = mergePeerAnswer(detail);
+            // if (stateWasUpdated) {
+                if (window.spriteManager && window.turboModeActive) {
+                    const isCorrect = checkIfAnswerCorrect(detail.question_id, detail.answer_value);
+                    window.spriteManager.handlePeerAnswer(detail.username, isCorrect);
+                }
+                requestAnimationFrame(() => {
+                    refreshQuestionIfVisible(detail.question_id);
+                    if (typeof updatePeerDataTimestamp === 'function') {
+                        updatePeerDataTimestamp();
+                    }
+                });
+            // }
+        });
+
+        // Add this if it doesn't already exist
+        if(!window.turboModeListenerAttached) {
+            window.addEventListener('turboModeChanged', (e) => {
+                if (!e.detail.enabled && window.spriteManager) {
+                    window.spriteManager.clearAllPeerSprites();
+                }
+            });
+            window.turboModeListenerAttached = true;
+        }
 
         // Progress Tracking System
         function initializeProgressTracking() {
@@ -4999,51 +5025,6 @@ if (chartInstances[`dotplot-${questionId}`]) {
             }, 30000); // 30 seconds delay
         }
 
-        // Initialize the sprite when the page loads
-        window.addEventListener('load', () => {
-            // Initialize sprite immediately
-            initializePigSprite();
-        });
-
-        // Function to initialize pig sprite based on current user
-        function initializePigSprite() {
-            // Remove existing sprite if present
-            if (window.pigSprite && window.pigSprite.element) {
-                window.pigSprite.element.remove();
-            }
-
-            // Load saved color for current user, or use default
-            const savedColor = currentUsername ?
-                localStorage.getItem(`pigColor_${currentUsername}`) || 'pink' :
-                'pink';
-
-            window.pigSprite = new PigSprite(savedColor);
-        }
-
-        // Add color picker to the UI
-        function addColorPicker() {
-            const colorPicker = document.createElement('div');
-            colorPicker.innerHTML = `
-                <div style="position: fixed; bottom: 20px; left: 20px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 1000;">
-                    <label>Pig Color: </label>
-                    <select id="pigColorSelect" onchange="if(window.pigSprite) window.pigSprite.setColor(this.value)">
-                        <option value="pink">Pink</option>
-                        <option value="blue">Blue</option>
-                        <option value="green">Green</option>
-                        <option value="purple">Purple</option>
-                        <option value="yellow">Yellow</option>
-                        <option value="red">Red</option>
-                        <option value="gray">Gray</option>
-                    </select>
-                </div>
-            `;
-            document.body.appendChild(colorPicker);
-        }
-
-        // Add this to your window.onload
-        window.addEventListener('load', () => {
-            addColorPicker();
-        });
 
     </script>
 
