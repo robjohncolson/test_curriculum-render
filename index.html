@@ -188,8 +188,8 @@
         async function testSupabaseConnection() {
             if (!supabase) {
                 turboModeActive = false;
+                window.dispatchEvent(new CustomEvent('turboModeChanged', { detail: { enabled: turboModeActive } }));
                 console.log('No Supabase client available');
-                stopActivityRefresh(); // TASK 3.3: Stop activity refresh
                 return false;
             }
 
@@ -212,22 +212,19 @@
                 if (result.error) {
                     console.log('Supabase test query error:', result.error);
                     turboModeActive = false;
+                    window.dispatchEvent(new CustomEvent('turboModeChanged', { detail: { enabled: turboModeActive } }));
                     return false;
                 }
 
                 turboModeActive = true;
+                window.dispatchEvent(new CustomEvent('turboModeChanged', { detail: { enabled: turboModeActive } }));
                 console.log('✅ Turbo mode active - Supabase connected');
-
-                // TASK 3.3: Start activity refresh when turbo mode is active
-                startActivityRefresh();
 
                 return true;
             } catch (error) {
                 turboModeActive = false;
+                window.dispatchEvent(new CustomEvent('turboModeChanged', { detail: { enabled: turboModeActive } }));
                 console.log('🔌 Turbo mode inactive - Using offline mode:', error.message);
-
-                // TASK 3.3: Stop activity refresh when turbo mode fails
-                stopActivityRefresh();
 
                 return false;
             }
@@ -652,9 +649,6 @@
                     // TODO: Trigger re-render of current question's peer data if needed
                     // This would need to be integrated with your existing quiz rendering logic
                 }
-
-                // TASK 3.3: Pull peer activity data for pig system
-                await pullPeerActivityFromSupabase();
             }
         }
 
@@ -4879,24 +4873,6 @@ if (chartInstances[`dotplot-${questionId}`]) {
             }
         }
 
-        // --- Main Event Listener for Real-Time Updates ---
-        window.addEventListener('peer:answer', (event) => {
-            const detail = event?.detail || {};
-            // Note: mergePeerAnswer would be called here if it existed
-            // const stateWasUpdated = mergePeerAnswer(detail);
-            // if (stateWasUpdated) {
-                if (window.spriteManager && window.turboModeActive) {
-                    const isCorrect = checkIfAnswerCorrect(detail.question_id, detail.answer_value);
-                    window.spriteManager.handlePeerAnswer(detail.username, isCorrect);
-                }
-                requestAnimationFrame(() => {
-                    refreshQuestionIfVisible(detail.question_id);
-                    if (typeof updatePeerDataTimestamp === 'function') {
-                        updatePeerDataTimestamp();
-                    }
-                });
-            // }
-        });
 
         // Add this if it doesn't already exist
         if(!window.turboModeListenerAttached) {
@@ -5019,6 +4995,35 @@ if (chartInstances[`dotplot-${questionId}`]) {
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
+
+
+
+
+        // --- Main Event Listener for Real-Time Updates ---
+        window.addEventListener('peer:answer', (event) => {
+            const detail = event?.detail || {};
+
+            // 1. Update the application's core state
+            const stateWasUpdated = mergePeerAnswer(detail);
+
+            if (stateWasUpdated) {
+                // 2. If state was updated, handle sprite animation
+                // (SpriteManager has its own internal turbo check via this.isTurboActive)
+                if (window.spriteManager) {
+                    const isCorrect = checkIfAnswerCorrect(detail.question_id, detail.answer_value);
+                    window.spriteManager.handlePeerAnswer(detail.username, isCorrect);
+                }
+
+                // 3. Schedule the UI refresh for the quiz content
+                requestAnimationFrame(() => {
+                    refreshQuestionIfVisible(detail.question_id);
+                    if (typeof updatePeerDataTimestamp === 'function') {
+                        updatePeerDataTimestamp();
+                    }
+                });
+            }
+        });
+
         // New function to render unit selection menu
         function renderUnitMenu() {
             const questionsContainer = document.getElementById('questionsContainer');
@@ -6326,6 +6331,7 @@ if (chartInstances[`dotplot-${questionId}`]) {
 
             // Create sprite manager
             spriteManager = new SpriteManager(canvasEngine, spriteSheet);
+            window.spriteManager = spriteManager; // Expose globally for early listeners
 
             // Check if sprites are enabled
             const spritesEnabled = localStorage.getItem('spritesEnabled') !== 'false';
@@ -6409,17 +6415,6 @@ if (chartInstances[`dotplot-${questionId}`]) {
             }
         });
 
-        // Hook into peer answer events
-        if (window.socket) {
-            window.socket.on('peer:answer', (data) => {
-                if (spriteManager && turboModeActive) {
-                    const questionId = data.question_id ?? data.questionId;
-                    const peerAnswer = data.answer_value ?? data.answer;
-                    const isCorrect = checkIfAnswerCorrect(questionId, peerAnswer);
-                    spriteManager.handlePeerAnswer(data.username, isCorrect);
-                }
-            });
-        }
 
         // Clear peer sprites when turbo mode is disabled
         window.addEventListener('turboModeChanged', (e) => {

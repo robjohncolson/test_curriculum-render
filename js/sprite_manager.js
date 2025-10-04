@@ -4,6 +4,14 @@ class SpriteManager {
     this.spriteSheet = spriteSheet;
     this.peerSprites = new Map();
     this.positionedUsernames = [];
+    this.isTurboActive = false; // Add this line
+
+    // Listen for turbo mode changes instead of checking global flag
+    window.addEventListener('turboModeChanged', (e) => {
+      this.isTurboActive = !!(e.detail && e.detail.enabled);
+      if (!this.isTurboActive) this.clearAllPeerSprites();
+    });
+
     this._handleResize = this._handleResize.bind(this);
     window.addEventListener('resize', this._handleResize);
   }
@@ -32,7 +40,7 @@ class SpriteManager {
     });
   }
   handlePeerAnswer(username, isCorrect) {
-    if (!window.turboModeActive) return;
+    if (!this.isTurboActive) return; // Changed from window.turboModeActive
     let peerSprite = this.peerSprites.get(username);
     if (!peerSprite) {
       this.positionedUsernames.push(username);
