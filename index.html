@@ -818,18 +818,6 @@ function refreshQuestionIfVisible(questionId) {
     }
 }
 
-// --- Main Event Listener for Real-Time Updates ---
-window.addEventListener('peer:answer', (event) => {
-    const stateWasUpdated = mergePeerAnswer(event.detail);
-    if (stateWasUpdated) {
-        requestAnimationFrame(() => {
-            refreshQuestionIfVisible(event.detail.question_id);
-            if (typeof updatePeerDataTimestamp === 'function') {
-                updatePeerDataTimestamp();
-            }
-        });
-    }
-});
 // --- END: NEW Real-Time Update Handling System ---
 
         async function initializeTurboMode() {
@@ -6161,199 +6149,6 @@ if (chartInstances[`dotplot-${questionId}`]) {
             }
         }
 
-        // ========================================
-        // TASK 5.0: SPRITE SETTINGS MODAL FUNCTIONS
-        // ========================================
-
-        /**
-         * Show the sprite settings modal
-         * TASK 5.2: Disabled - shows "Under Construction" message only
-         */
-        function showSpriteSettingsModal() {
-            // TASK 5.2: Sprites disabled pending Canvas refactor
-            if (!SPRITES_ENABLED) {
-                const modal = document.getElementById('spriteSettingsModal');
-                if (modal) {
-                    modal.style.display = 'block';
-                }
-                return;
-            }
-
-            // Legacy code - will be removed in Phase 5
-            const modal = document.getElementById('spriteSettingsModal');
-            if (modal) {
-                // Load current settings
-                const spritesEnabled = localStorage.getItem('pigsEnabled') !== 'false';
-                const savedColor = localStorage.getItem('spriteColor') || '0';
-
-                document.getElementById('spritesEnabled').checked = spritesEnabled;
-
-                // Generate color grid
-                generateColorGrid();
-
-                // Set selected color
-                selectColor(parseInt(savedColor));
-
-                // Update preview
-                updateSpritePreview();
-
-                modal.style.display = 'block';
-            }
-        }
-
-        /**
-         * Close the sprite settings modal
-         */
-        function closeSpriteSettingsModal() {
-            const modal = document.getElementById('spriteSettingsModal');
-            if (modal) {
-                modal.style.display = 'none';
-            }
-        }
-
-        /**
-         * Generate the color grid with selectable colors
-         */
-        function generateColorGrid() {
-            const colorGrid = document.getElementById('colorGrid');
-            if (!colorGrid) return;
-
-            // Define color options (hue values)
-            const colors = [
-                { hue: 0, name: 'Red' },
-                { hue: 30, name: 'Orange' },
-                { hue: 60, name: 'Yellow' },
-                { hue: 120, name: 'Green' },
-                { hue: 180, name: 'Cyan' },
-                { hue: 210, name: 'Blue' },
-                { hue: 270, name: 'Purple' },
-                { hue: 330, name: 'Pink' }
-            ];
-
-            colorGrid.innerHTML = colors.map((color, index) => `
-                <div class="color-option" data-hue="${color.hue}" data-index="${index}"
-                     onclick="selectColor(${index})"
-                     style="background: hsl(${color.hue}, 70%, 50%);"
-                     title="${color.name}">
-                </div>
-            `).join('');
-        }
-
-        /**
-         * Select a color option
-         */
-        function selectColor(index) {
-            // Remove previous selection
-            document.querySelectorAll('.color-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-
-            // Add selection to clicked color
-            const colorOptions = document.querySelectorAll('.color-option');
-            if (colorOptions[index]) {
-                colorOptions[index].classList.add('selected');
-
-                // Store selection temporarily
-                window.tempSpriteColorIndex = index;
-                window.tempSpriteColorHue = colorOptions[index].dataset.hue;
-
-                // Update preview
-                updateSpritePreview();
-            }
-        }
-
-        /**
-         * Update the sprite preview with current settings
-         */
-        function updateSpritePreview() {
-            const previewContainer = document.getElementById('spritePreview');
-            const usernameLabel = document.getElementById('previewUsername');
-
-            if (!previewContainer || !usernameLabel) return;
-
-            const hue = window.tempSpriteColorHue || localStorage.getItem('spriteColorHue') || '0';
-            const username = currentUsername || 'Preview';
-
-            previewContainer.innerHTML = `
-                <div class="preview-sprite" style="
-                    width: 60px;
-                    height: 60px;
-                    background-image: url('sprite.png');
-                    background-size: 1200%;
-                    background-position: 0 0;
-                    filter: hue-rotate(${hue}deg);
-                    image-rendering: pixelated;
-                    margin: 0 auto;
-                "></div>
-            `;
-
-            usernameLabel.textContent = username;
-        }
-
-        /**
-         * Handle sprite toggle checkbox change
-         */
-        function handleSpriteToggle() {
-            const checkbox = document.getElementById('spritesEnabled');
-            // Just update the UI, actual toggle happens on save
-            console.log('Sprite toggle:', checkbox.checked);
-        }
-
-        /**
-         * Save sprite settings and apply them
-         * TASK 5.2: Disabled - no functionality when SPRITES_ENABLED is false
-         */
-        function saveSpriteSettings() {
-            // TASK 5.2: Sprites disabled pending Canvas refactor
-            if (!SPRITES_ENABLED) {
-                closeSpriteSettingsModal();
-                console.log('🎮 Sprites temporarily disabled pending Canvas refactor');
-                return;
-            }
-
-            // Legacy code - will be removed in Phase 5
-            const spritesEnabled = document.getElementById('spritesEnabled').checked;
-            const colorIndex = window.tempSpriteColorIndex !== undefined ?
-                              window.tempSpriteColorIndex :
-                              parseInt(localStorage.getItem('spriteColor') || '0');
-            const colorHue = window.tempSpriteColorHue ||
-                            localStorage.getItem('spriteColorHue') || '0';
-
-            // Save to localStorage
-            localStorage.setItem('pigsEnabled', spritesEnabled);
-            localStorage.setItem('spriteColor', colorIndex.toString());
-            localStorage.setItem('spriteColorHue', colorHue);
-
-            console.log('Sprite settings saved:', { spritesEnabled, colorIndex, colorHue });
-
-            // Apply settings
-            if (!window.pigManager && spritesEnabled) {
-                // Initialize pig manager if not exists
-                window.pigManager = new PigManager();
-            } else if (window.pigManager) {
-                // Toggle existing manager
-                if (window.pigManager.enabled !== spritesEnabled) {
-                    window.pigManager.toggle();
-                }
-            }
-
-            // Update user's own sprite color if they have one
-            // (This would apply to their PigSprite, not PeerPig)
-
-            // Close modal
-            closeSpriteSettingsModal();
-
-            // Show success message
-            showMessage('✅ Sprite settings saved!', 'success');
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const spriteModal = document.getElementById('spriteSettingsModal');
-            if (event.target === spriteModal) {
-                closeSpriteSettingsModal();
-            }
-        }
 
         // Runtime migration function to update existing localStorage data
         function migrateExistingAnswersData() {
@@ -6614,38 +6409,13 @@ if (chartInstances[`dotplot-${questionId}`]) {
             }
         });
 
-        // Check if answer is correct
-        function checkIfAnswerCorrect(eventPayload) {
-            try {
-                const questionId = eventPayload.question_id ?? eventPayload.questionId;
-                const peerAnswer = eventPayload.answer_value ?? eventPayload.answer;
-
-                // Try to get correct answer from global function
-                if (typeof getCorrectAnswer === 'function') {
-                    const correct = getCorrectAnswer(questionId);
-                    return String(peerAnswer).trim() === String(correct).trim();
-                }
-
-                // Fallback to currentQuestions array if available
-                if (Array.isArray(window.currentQuestions)) {
-                    const q = window.currentQuestions.find(q => String(q.id) === String(questionId));
-                    if (q && q.correct_answer != null) {
-                        return String(peerAnswer).trim() === String(q.correct_answer).trim();
-                    }
-                }
-
-                return false;
-            } catch (e) {
-                console.warn('checkIfAnswerCorrect failed:', e);
-                return false;
-            }
-        }
-
         // Hook into peer answer events
         if (window.socket) {
             window.socket.on('peer:answer', (data) => {
                 if (spriteManager && turboModeActive) {
-                    const isCorrect = checkIfAnswerCorrect(data);
+                    const questionId = data.question_id ?? data.questionId;
+                    const peerAnswer = data.answer_value ?? data.answer;
+                    const isCorrect = checkIfAnswerCorrect(questionId, peerAnswer);
                     spriteManager.handlePeerAnswer(data.username, isCorrect);
                 }
             });
