@@ -48,6 +48,12 @@
               console.log('🔌 WebSocket connected to Railway server');
               wsConnected = true;
 
+              // Enable turbo mode when WebSocket connects
+              window.dispatchEvent(new CustomEvent('turboModeChanged', {
+                  detail: { enabled: true }
+              }));
+              console.log('🏁 Turbo mode enabled via Railway connection');
+
               // Clear any reconnect timer
               if (wsReconnectTimer) {
                   clearTimeout(wsReconnectTimer);
@@ -76,6 +82,12 @@
               console.log('WebSocket disconnected');
               wsConnected = false;
 
+              // Disable turbo mode when WebSocket disconnects
+              window.dispatchEvent(new CustomEvent('turboModeChanged', {
+                  detail: { enabled: false }
+              }));
+              console.log('🛑 Turbo mode disabled due to WebSocket disconnect');
+
               if (wsPingInterval) {
                   clearInterval(wsPingInterval);
                   wsPingInterval = null;
@@ -91,6 +103,12 @@
           ws.onerror = (error) => {
               console.error('WebSocket error:', error);
               wsConnected = false;
+
+              // Disable turbo mode when WebSocket errors
+              window.dispatchEvent(new CustomEvent('turboModeChanged', {
+                  detail: { enabled: false }
+              }));
+              console.log('🛑 Turbo mode disabled due to WebSocket error');
           };
 
       } catch (error) {
@@ -104,6 +122,10 @@
       switch (data.type) {
           case 'connected':
               console.log('✅ WebSocket:', data.message);
+              // Also enable turbo mode when receiving connected message
+              window.dispatchEvent(new CustomEvent('turboModeChanged', {
+                  detail: { enabled: true }
+              }));
               break;
 
           case 'answer_submitted':
