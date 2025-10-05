@@ -6,7 +6,7 @@ class PlayerSprite {
     this.vx = 0;
     this.vy = 0;
     this.speed = 200;
-    this.scale = 1.0;
+    this.scale = 0.5;
     this.hue = parseInt(localStorage.getItem('spriteColorHue') || '0', 10);
     this.frameIndex = 0;
     this.animationTimer = 0;
